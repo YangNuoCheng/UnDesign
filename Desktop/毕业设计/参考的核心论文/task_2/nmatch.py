@@ -12,6 +12,7 @@ import numpy as np
 import random
 import pandas as pd
 from xlutils.copy import copy
+window = 1
 #每次匹配的机器数为window个，每次只能添加一个用户到主机列表中
 def readData():
     work_book = xlrd.open_workbook('compare.xlsx')
@@ -20,9 +21,9 @@ def readData():
     usersnumber = sheet_1.nrows-1
     servernumber = sheet_2.nrows-1
     # print(sheet_1.nrows)
-    users = np.empty(shape=(usersnumber,13))
+    users = np.empty(shape=(usersnumber,14))
     for i in range(1,usersnumber+1):
-        for j in range(0,13):
+        for j in range(0,14):
             # print(sheet_1.cell_value(i,j))
             # print(j)
             users[i-1,j]=sheet_1.cell_value(i,j)
@@ -64,7 +65,6 @@ def WriteBackToxlsx(user,server,serverList,user2):
     new_workbook.save('compare.xlsx')  # 保存工作簿
     # print("xlxs表格sheet2写入数据成功！")
     print("结果重新写回compare.xlsx")
-
 def userUtility(user,server):
     # 传入的是一维数组，计算某个用户连接某个主机时的效用函数
     seita = random.normalvariate(0, server[12])
@@ -73,7 +73,6 @@ def userUtility(user,server):
         Utility = Utility + ((1-user[i+5])*(user[i]*server[i]+seita))
     # print(Utility)
     return Utility
-
 def serverUtility(user,server):
     # 传入的是一维数组，计算某个主机连接某个用户时的效用函数
     seita = random.normalvariate(0, server[12])
@@ -99,15 +98,22 @@ def findOutBestMatchUser(user1,server):
         
 def findOutBestMatchSer(user,server,servernumber):
     # 传入的是一个server和所有的用户,回传的是server连接的第一个用户
-    ans=[]
-    i = 0
+    ans = [] #用户的列表
+    count = 0
     for j in user:
-        if(j[12]==0):  #用户没有确定连接
-            if(j[11]==servernumber and server[11]>j[10]): #算力大小匹配且用户目标主机为本主机
-                ans.append(i)
-                server[11]=server[11]-j[10]
-        i=i+1
-        # 这个地方可以设置一个window，只连接前window个用户
+        if(j[13] == 0):  #用户没有确定连接
+            # print(j[11])
+            if(j[11] == servernumber and server[11]>j[10]): #算力大小匹配且用户目标主机为本主机
+                ans.append(count)
+                # server[11]=server[11]-j[10]  # 可以先不处理，记录好所有的序列，之后有选择的进行匹配
+        count = count + 1
+    # 需要对ans中的服务器效用进行排序
+    listSort = ans
+    # print("-----",ans,"-----")
+    # for i in range(len(ans)):
+    #     listSort[i] = serverUtility(user[i],server)
+    # print(listSort)
+    # 循环window次，只连接前window个用户
     return ans
     # 设计思想，回传可以连接的用户编号（数组），第一轮，满不满另说
 
@@ -128,10 +134,9 @@ def main():
     # print(serverUtility(user[1], server[1]))
     count = 0
     for i in user:
-        user[count][11] = findOutBestMatchUser(i,server)
-        # print(count,user[count][11],user[count][10])
+        user[count][11] = findOutBestMatchUser(i,server) #用户待连接的主机已经赋值
+        # print(count,i[11],i[10])
         count = count + 1
-        # 排好序了，但不一定是最后一次排序，还需要做while循环，直到所有的用户都有匹配的服务器
     NumberOfUsers = count
     StandardList = []
     for i in range(0,count):
@@ -143,18 +148,19 @@ def main():
     count = 0
     serverList=[]
     for i in server:
+        # print("*****",findOutBestMatchSer(user,i,count),"******")
         serverList.append(findOutBestMatchSer(user,i,count))
         count=count+1
-    count = 0
+    count = 1
+    # print(serverList)
     # 演示，每个主机匹配到的用户，以及剩余的算力
     print("第一次匹配结果")
     for i in serverList:
-        print(count,i,server[count][11])
+        print(count,i,server[count-1][11])
         count = count + 1
     CurrentList=Courrent(serverList)
     # print(CurrentList) 
     rest = set(StandardList).difference(set(CurrentList))
-    # print(rest) #没有匹配到的元素集合(set格式)
     # 此时还有很多用户没有能够匹配到自己心中最佳的服务器（没有出现在
     # ------------服务器匹配用户
     print("没有匹配的用户",rest)

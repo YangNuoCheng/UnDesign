@@ -20,9 +20,9 @@ def readData():
     usersnumber = sheet_1.nrows-1
     servernumber = sheet_2.nrows-1
     # print(sheet_1.nrows)
-    users = np.empty(shape=(usersnumber,13))
+    users = np.empty(shape=(usersnumber,14))
     for i in range(1,usersnumber+1):
-        for j in range(0,13):
+        for j in range(0,14):
             # print(sheet_1.cell_value(i,j))
             # print(j)
             users[i-1,j]=sheet_1.cell_value(i,j)
@@ -58,24 +58,30 @@ def serverUtility(user,server):
 def avgSatiUsers(users,servers,strA):
     # 传入所有用户和所有服务器列表
     # strA = 'matching'则是匹配博弈的结果,否则为随机分配结果
-    pos = 12
+    pos = 12  #随机分配后
     if(strA == 'matching'):
-        pos = 11
+        pos = 11  #匹配博弈后
     avgSatUser = 0
     sumSatUser = 0
     avgSatServer = 0
     sumSatServer = 0
     count = 0
     for i in users:
-        sumSatUser = sumSatUser + userUtility(i,servers[int(i[pos])])
-        sumSatServer = sumSatServer + serverUtility(i,servers[int(i[pos])])
-        count = count + 1
+        if(pos == 11 and i[pos] != -1):
+            sumSatUser = sumSatUser + userUtility(i,servers[int(i[pos])])
+            sumSatServer = sumSatServer + serverUtility(i,servers[int(i[pos])])
+            count = count + 1
+        if(pos == 12 and i[pos] != 10000):
+            sumSatUser = sumSatUser + userUtility(i,servers[int(i[pos])])
+            sumSatServer = sumSatServer + serverUtility(i,servers[int(i[pos])])
+            count = count + 1
     avgSatUser = sumSatUser / count
     avgSatServer = sumSatServer / count
     return [avgSatUser,avgSatServer]
     
 def main():
     users,servers = readData()
+    print(np.shape(servers)[0])
     print(avgSatiUsers(users,servers,'matching'))
     print(avgSatiUsers(users,servers,'random'))
     
